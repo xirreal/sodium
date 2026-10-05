@@ -45,7 +45,11 @@ public abstract class BufferArena implements AllocatorBase {
     protected BufferArena(ArenaAggregator parent, GpuBuffer initialBuffer, long capacity, int stride) {
         // round down to the nearest multiple of 4 to not leave a misaligned segment at the end of the arena
         // see https://github.com/CaffeineMC/sodium/issues/3509 for an earlier discussion and patch
-        // that didnt make it into the arena allocator
+        // the previous patch is still used by estimateNewCapacity, but initial arena allocations bypass that path.
+        // unlike there, here we round down instead of up to not over report the capacity of the allocation in
+        // elements of the buffer and avoid out of bounds allocations, whereas in the esimation we can overestimate and leave unused
+        // space but keep aligment.
+        // worst case, a resize/move will happen if it can't fit
         capacity &= ~3L;
 
         this.parent = parent;
